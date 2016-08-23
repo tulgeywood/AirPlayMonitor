@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+        <key>Label</key>
+        <string>com.tulgeywood.airplayQualityMonitor</string>
+        <key>ProgramArguments</key>
+        <array>
+            <string>/bin/sh</string>
+            <string>-c</string>
+            <string>awk '/^.... AIRPLAY$/ {flag=1;next} /^AIRPLAY ...$/ {flag=0} flag' /Library/LaunchDaemons/com.tulgeywood.airplayQualityMonitor.plist | sh</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>/Library/Preferences/Audio/com.apple.audio.SystemSettings.plist</string>
+    </array>
+    <key>StandardOutPath</key>
+    <string>/var/log/airplay.log</string>
+</dict>
+</plist>
+
+<!-- AIRPLAY
+
+logOutput(){
+    $1 | while read line; do echo $(date '+%b %d %H:%M:%S') "$line" ; done
+}
+
+if $(awk '/AirPlayXPCHelper.*isConnected/ {a=$0} END{print a}' /private/var/log/system.log | grep -q "true"); then
+    airplayConnected=true
+else
+    airplayConnected=false
+fi
+
+if [ "$airplayConnected" = "false" ]; then
+    if ! [ -f /var/log/airplay.log ]; then
+        exit 0
+    elif $(tail -n 1 /var/log/airplay.log | grep -q "Tx Rate"); then
+        now=$(date +%s)
+        startTime=$(date -jf "%b %d %H:%M:%S" "$(tail -n 1 /var/log/airplay.log | awk '{print $1" "$2" "$3}')" "+%s")
+        seconds=$(($now - $startTime))
+        logOutput "echo Disconnected from \"$(awk -F'"' '/ATVName : / {a=$2} END{print a}' /private/var/log/system.log)\" after $seconds seconds"
+        exit 0
+    fi
+elif [ "$airplayConnected" = "true" ]; then
+    if ! $(tail -n 1 /var/log/airplay.log | grep -q "Tx Rate") || ! [ -f /var/log/airplay.log ]; then
+        RSSI=$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I | awk '/agrCtlRSSI/ {print $2}')
+        NOISE=$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I | awk '/agrCtlNoise/ {print $2}')
+        txRATE=$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I | awk '/lastTxRate/ {print $2}')
+        BSSID=$(/System/Library/PrivateFrameworks/Apple80211.framework/Versions/Current/Resources/airport -I | awk '/BSSID/ {print $2}')
+
+        logOutput "echo Successfully connected to: $(awk -F'["]' '/ATVName : / {a=$2} END{print a}' /private/var/log/system.log)"
+        logOutput "echo RSSI: $RSSI Noise: $NOISE Tx Rate: $txRATE BSSID: $BSSID"
+    fi
+else
+    exit 0
+fi
+AIRPLAY -->
